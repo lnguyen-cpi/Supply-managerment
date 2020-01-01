@@ -1,6 +1,14 @@
 pragma solidity ^0.4.24;
+
+
+import '../coffeeaccesscontrol/ConsumerRole.sol';
+import '../coffeeaccesscontrol/DistributorRole.sol';
+import '../coffeeaccesscontrol/FarmerRole.sol';
+import '../coffeeaccesscontrol/RetailerRole.sol';
+import '../coffeecore/Ownable.sol';
+
 // Define a contract 'Supplychain'
-contract SupplyChain {
+contract SupplyChain is Ownable, ConsumerRole, DistributorRole, FarmerRole, RetailerRole {
 
   // Define 'owner'
   address owner;
@@ -157,7 +165,8 @@ contract SupplyChain {
   {
     // Add the new item as part of Harvest
     items[_upc].sku = sku;
-    items[_upc].soriginFarmerID = _originFarmerID;
+    items[_upc].upc = _upc;
+    items[_upc].originFarmerID = _originFarmerID;
     items[_upc].originFarmName = _originFarmName;
     items[_upc].originFarmInformation = _originFarmInformation;
     items[_upc].originFarmLatitude = _originFarmLatitude;
@@ -165,6 +174,8 @@ contract SupplyChain {
     items[_upc].productID = _upc + sku;
     items[_upc].productNotes = _productNotes;
     items[_upc].itemState = State.Harvested;
+
+    items[_upc].ownerID = _originFarmerID;
     // Increment sku
     sku = sku + 1;
     // Emit the appropriate event
@@ -176,11 +187,11 @@ contract SupplyChain {
   // Call modifier to check if upc has passed previous supply chain stage
   harvested(_upc) 
   // Call modifier to verify caller of this function
-  onlyFarmer
+  onlyFarmer()
   verifyCaller(items[_upc].ownerID)
   {
     // Update the appropriate fields
-    items[_upc].itemState = State.Processed
+    items[_upc].itemState = State.Processed;
     // Emit the appropriate event
     emit Processed(_upc); 
   }
@@ -194,7 +205,7 @@ contract SupplyChain {
   verifyCaller(items[_upc].ownerID)
   {
     // Update the appropriate fields
-    items[_upc].itemState = State.Packed
+    items[_upc].itemState = State.Packed;
     // Emit the appropriate event
     emit Packed(_upc);
   }
@@ -202,14 +213,14 @@ contract SupplyChain {
   // Define a function 'sellItem' that allows a farmer to mark an item 'ForSale'
   function sellItem(uint _upc, uint _price) public 
   // Call modifier to check if upc has passed previous supply chain stage
-  packed(_upc);
+  packed(_upc)
   // Call modifier to verify caller of this function
   onlyFarmer
   verifyCaller(items[_upc].ownerID)
   {
     // Update the appropriate fields
     items[_upc].productPrice = _price;
-    items[_upc].itemState = State.ForSale
+    items[_upc].itemState = State.ForSale;
     // Emit the appropriate event
     emit ForSale(_upc);
   }
@@ -304,10 +315,10 @@ contract SupplyChain {
   itemUPC = items[_upc].upc;
   ownerID = items[_upc].ownerID; 
   originFarmerID = items[_upc].originFarmerID;
-  originFarmName = items[_upc].originFarmName,
-  originFarmInformation = items[_upc].originFarmInformation,
-  originFarmLatitude = items[_upc].originFarmLatitude,
-  originFarmLongitude = items[_upc].originFarmLongitude
+  originFarmName = items[_upc].originFarmName;
+  originFarmInformation = items[_upc].originFarmInformation;
+  originFarmLatitude = items[_upc].originFarmLatitude;
+  originFarmLongitude = items[_upc].originFarmLongitude;
     
   return 
   (
@@ -342,7 +353,7 @@ contract SupplyChain {
   productID = items[_upc].productID; 
   productNotes = items[_upc].productNotes;
   productPrice = items[_upc].productPrice;
-  itemState = items[_upc].itemState;
+  itemState = uint(items[_upc].itemState);
   distributorID = items[_upc].distributorID;
   retailerID = items[_upc].retailerID;
   consumerID = items[_upc].consumerID;
